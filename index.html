@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Jarvis Web Assistant (Conversational)</title>
+</head>
+<body>
+    <h1>Jarvis Web Assistant</h1>
+    <button onclick="startListening()">🎙 Speak</button>
+    <p id="output"></p>
+
+    <script>
+        function startListening() {
+            const recognition = new webkitSpeechRecognition();
+            recognition.lang = 'en-US';
+            recognition.start();
+
+            recognition.onresult = function(event) {
+                const text = event.results[0][0].transcript;
+                document.getElementById('output').innerText += "\nYou: " + text;
+                sendToBackend(text);
+            };
+        }
+
+        function sendToBackend(text) {
+            fetch('/process', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ "message": text })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('output').innerText += "\nJarvis: " + data.reply;
+                speakText(data.reply);
+            });
+        }
+
+        function speakText(text) {
+            const synth = window.speechSynthesis;
+            const utterThis = new SpeechSynthesisUtterance(text);
+            synth.speak(utterThis);
+        }
+
+        // Greet automatically on page load
+        window.onload = function() {
+            fetch('/greet')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('output').innerText = "Jarvis: " + data.reply;
+                speakText(data.reply);
+            });
+        };
+    </script>
+</body>
+</html>
